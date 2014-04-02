@@ -1,8 +1,8 @@
 
 smooth: smooth.o gltb.o glm.o loadShader.o
-	g++ -std=c++0x -w -o smooth smooth.o gltb.o glm.o loadShader.o -lglut -lGL -lGLU
+	g++ -std=c++0x -w -o smooth smooth.o gltb.o glm.o loadShader.o -lGL -lglut -lGLU
 smooth.o: smooth.c gltb.h glm.h dirent32.h loadShader.h
-	g++ -std=c++0x -w -c -o smooth.o smooth.c
+	g++ -std=c99 -w -c -o smooth.o smooth.c
 gltb.o: gltb.c gltb.h
 	g++ -w -c -o gltb.o gltb.c
 glm.o: glm.c glm.h

@@ -1,22 +1,31 @@
-/*  
+/*
     smooth.c
     Nate Robins, 1998
 
     Model viewer program.  Exercises the glm library.
 */
-
 #ifdef __APPLE__
 #include <GLUT/glut.h>
 #else
+
+#define GL_GLEXT_PROTOTYPES
 #include <GL/glut.h>
+#include <GL/gl.h>
+#include <GL/glx.h>
+#include <GL/glu.h>
+#include <GL/glext.h>
+#include <GL/glxext.h>
 #endif
 
-#include <string>
+
+
+#include <string.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
 #include <stdarg.h>
+#include <string>
 #include "loadShader.h"
 #include "gltb.h"
 #include "glm.h"
@@ -55,19 +64,20 @@ GLuint shadowTexture;
 
 #if defined(_WIN32)
 #include <sys/timeb.h>
-#define CLK_TCK 1000
+
 #else
 #include <limits.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/times.h>
 #endif
+#define CLK_TCK 1000
 float
 elapsed(void)
 {
     static long begin = 0;
     static long finish, difference;
-    
+
 #if defined(_WIN32)
     static struct timeb tb;
     ftime(&tb);
@@ -76,26 +86,26 @@ elapsed(void)
     static struct tms tb;
     finish = times(&tb);
 #endif
-    
+
     difference = finish - begin;
     begin = finish;
-    
+
     return (float)difference/(float)CLK_TCK;
 }
 
 void initShadowMap();
 
 void
-shadowtext(int x, int y, char* s) 
+shadowtext(int x, int y, char* s)
 {
     int lines;
     char* p;
-    
+
     glDisable(GL_DEPTH_TEST);
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
     glLoadIdentity();
-    glOrtho(0, glutGet(GLUT_WINDOW_WIDTH), 
+    glOrtho(0, glutGet(GLUT_WINDOW_WIDTH),
         0, glutGet(GLUT_WINDOW_HEIGHT), -1, 1);
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
@@ -132,17 +142,17 @@ lists(void)
     GLfloat diffuse[] = { 0.8, 0.8, 0.8, 1.0 };
     GLfloat specular[] = { 0.0, 0.0, 0.0, 1.0 };
     GLfloat shininess = 65.0;
-    
+
     glMaterialfv(GL_FRONT, GL_AMBIENT, ambient);
     glMaterialfv(GL_FRONT, GL_DIFFUSE, diffuse);
     glMaterialfv(GL_FRONT, GL_SPECULAR, specular);
     glMaterialf(GL_FRONT, GL_SHININESS, shininess);
-    
+
     if (model_list)
         glDeleteLists(model_list, 1);
-    
+
     /* generate a list */
-    if (material_mode == 0) { 
+    if (material_mode == 0) {
         if (facet_normal)
             model_list = glmList(model, GLM_FLAT);
         else
@@ -163,32 +173,32 @@ lists(void)
 void
 init(void)
 {
-    
+
     renderShaderID = loadShaders("shaders/vShader.c", "shaders/fShader.c");
     shadowShaderID = loadShaders("shaders/shadowVShader.c", "shaders/shadowFShader.c");
-    
-    initShadowMap();
-    
+
+    //initShadowMap();
+
     gltbInit(GLUT_LEFT_BUTTON);
-    
+
     /* read in the model */
     model = glmReadOBJ(model_file);
     scale = glmUnitize(model);
     glmFacetNormals(model);
     glmVertexNormals(model, smoothing_angle);
-    
+
     if (model->nummaterials > 0)
         material_mode = 2;
-    
+
     /* create new display lists */
     lists();
-    
+
     glEnable(GL_LIGHTING);
     glEnable(GL_LIGHT0);
     glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
-    
+
     //glEnable(GL_DEPTH_TEST);
-    
+
     //glEnable(GL_CULL_FACE);
 }
 
@@ -196,26 +206,26 @@ void
 initShadowMap()
 {
     shaderTexID = glGetUniformLocation(renderShaderID, "renderedTexture");
-    
+
     shadowBuffer = 0;
     glGenFramebuffers(1, &shadowBuffer);
     glBindFramebuffer(GL_FRAMEBUFFER, shadowBuffer);
-    
+
     glGenTextures(1, &shadowTexture);
-    
+
     // "Bind" the newly created texture : all future texture functions will modify this texture
     glBindTexture(GL_TEXTURE_2D, shadowTexture);
-    
+
     // Give an empty image to OpenGL ( the last "0" )
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, windowW, windowH, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
-    
+
     // Poor filtering. Needed !
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    
+
     // Set "renderedTexture" as our colour attachement #0
-    glFramebufferTextureEXT(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, shadowTexture, 0);
-    
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, shadowTexture, 0);
+
     // Set the list of draw buffers.
     GLenum DrawBuffers[1] = {GL_COLOR_ATTACHMENT0};
     glDrawBuffers(1, DrawBuffers); // "1" is the size of DrawBuffers
@@ -227,9 +237,9 @@ void
 reshape(int width, int height)
 {
     gltbReshape(width, height);
-    
+
     glViewport(0, 0, width, height);
-    
+
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     gluPerspective(60.0, (GLfloat)height / (GLfloat)width, 1.0, 128.0);
@@ -240,8 +250,8 @@ reshape(int width, int height)
 
 void
 drawTexToScreen(void) {
-    
-    
+
+
     static const GLfloat g_quad_vertex_buffer_data[] = {
         -10.0f, -10.0f, 0.0f,
         10.0f, -10.0f, 0.0f,
@@ -250,25 +260,25 @@ drawTexToScreen(void) {
         10.0f, -10.0f, 0.0f,
         10.0f,  10.0f, 0.0f,
     };
-    
+
     GLuint quad_vertexbuffer;
     glGenBuffers(1, &quad_vertexbuffer);
     glBindBuffer(GL_ARRAY_BUFFER, quad_vertexbuffer);
     glBufferData(GL_ARRAY_BUFFER, sizeof(g_quad_vertex_buffer_data), g_quad_vertex_buffer_data, GL_STATIC_DRAW);
-    
-    
-    
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glViewport(0,0,windowW,windowH);
-    
+
+
+
+    //glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    //glViewport(0,0,windowW,windowH);
+
     glUseProgram(renderShaderID);
-    
-    glActiveTexture(GL_TEXTURE0);
+
+    //glActiveTexture(GL_TEXTURE0);
     //glEnable(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D, shadowTexture);
-    glUniform1i(shaderTexID, 0);
-    
-    
+    //glBindTexture(GL_TEXTURE_2D, shadowTexture);
+    //glUniform1i(shaderTexID, 0);
+
+
     // Draw a textured quad
     glEnableVertexAttribArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, quad_vertexbuffer);
@@ -280,8 +290,8 @@ drawTexToScreen(void) {
                           0,                  // stride
                           (void*)0            // array buffer offset
                           );
-    
-    
+
+
     //glMatrixMode(GL_PROJECTION);
     //glPushMatrix();
     //glLoadIdentity();
@@ -301,21 +311,21 @@ drawTexToScreen(void) {
                 0  );*/
 
     //glDisable(GL_LIGHTING);
-    
+
     // Draw the triangles !
     glDrawArrays(GL_TRIANGLES, 0, 6); // 2*3 indices starting at 0 -> 2 triangles
-    
+
     glDisableVertexAttribArray(0);
-    
+
     //glDisable(GL_TEXTURE_2D);
     //glPopMatrix();
-    
-    
+
+
     //glMatrixMode(GL_PROJECTION);
     //glPopMatrix();
-    
+
     //glMatrixMode(GL_MODELVIEW);
-    
+
 }
 
 #define NUM_FRAMES 5
@@ -325,28 +335,28 @@ display(void)
     static char s[256], t[32];
     static char* p;
     static int frames = 0;
-    
+
     glClearColor(1.0, 1.0, 1.0, 1.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    
+
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     //glBindFramebuffer(GL_FRAMEBUFFER, shadowBuffer);
-    
+
     glUseProgram(shadowShaderID);
-    
+
     // Render to our framebuffer
-    
+
     glViewport(0,0,windowW,windowH); // Render on the whole framebuffer, complete from the lower left corner to the upper right
-    
+
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
-    
+
     glTranslatef(pan_x, pan_y, 0.0);
-    
+
     gltbMatrix();
-    
+
 #if 0   /* glmDraw() performance test */
-    if (material_mode == 0) { 
+    if (material_mode == 0) {
         if (facet_normal)
             glmDraw(model, GLM_FLAT);
         else
@@ -365,10 +375,10 @@ display(void)
 #else
     glCallList(model_list);
 #endif
-    
-    
+
+
     drawTexToScreen();
-    
+
     glDisable(GL_LIGHTING);
     if (bounding_box) {
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -378,21 +388,21 @@ display(void)
         glutSolidCube(2.0);
         glDisable(GL_BLEND);
     }
-    
+
     glPopMatrix();
-    
+
     if (stats) {
         /* XXX - this could be done a _whole lot_ faster... */
         int height = glutGet(GLUT_WINDOW_HEIGHT);
         glColor3ub(0, 0, 0);
         sprintf(s, "%s\n%d vertices\n%d triangles\n%d normals\n"
             "%d texcoords\n%d groups\n%d materials",
-            model->pathname, model->numvertices, model->numtriangles, 
+            model->pathname, model->numvertices, model->numtriangles,
             model->numnormals, model->numtexcoords, model->numgroups,
             model->nummaterials);
         shadowtext(5, height-(5+18*1), s);
     }
-    
+
     /* spit out frame rate. */
     frames++;
     if (frames > NUM_FRAMES) {
@@ -402,11 +412,11 @@ display(void)
     if (performance) {
         shadowtext(5, 5, t);
     }
-    
+
     //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    
-    
-    
+
+
+
     glutSwapBuffers();
     glEnable(GL_LIGHTING);
 }
@@ -415,7 +425,7 @@ void
 keyboard(unsigned char key, int x, int y)
 {
     GLint params[2];
-    
+
     switch (key) {
     case 'h':
         printf("help\n\n");
@@ -433,15 +443,15 @@ keyboard(unsigned char key, int x, int y)
         printf("W         -  Write model to file (out.obj)\n");
         printf("q/escape  -  Quit\n\n");
         break;
-        
+
     case 't':
         stats = !stats;
         break;
-        
+
     case 'p':
         performance = !performance;
         break;
-        
+
     case 'm':
         material_mode++;
         if (material_mode > 2)
@@ -449,13 +459,13 @@ keyboard(unsigned char key, int x, int y)
         printf("material_mode = %d\n", material_mode);
         lists();
         break;
-        
+
     case 'd':
         glmDelete(model);
         init();
         lists();
         break;
-        
+
     case 'w':
         glGetIntegerv(GL_POLYGON_MODE, params);
         if (params[0] == GL_FILL)
@@ -463,44 +473,44 @@ keyboard(unsigned char key, int x, int y)
         else
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         break;
-        
+
     case 'c':
         if (glIsEnabled(GL_CULL_FACE))
             glDisable(GL_CULL_FACE);
         else
             glEnable(GL_CULL_FACE);
         break;
-        
+
     case 'b':
         bounding_box = !bounding_box;
         break;
-        
+
     case 'n':
         facet_normal = !facet_normal;
         lists();
         break;
-        
+
     case 'r':
         glmReverseWinding(model);
         lists();
         break;
-        
+
     case 's':
         glmScale(model, 0.8);
         lists();
         break;
-        
+
     case 'S':
         glmScale(model, 1.25);
         lists();
         break;
-        
+
     case 'o':
         //printf("Welded %d\n", glmWeld(model, weld_distance));
         glmVertexNormals(model, smoothing_angle);
         lists();
         break;
-        
+
     case 'O':
         weld_distance += 0.01;
         printf("Weld distance: %.2f\n", weld_distance);
@@ -509,26 +519,26 @@ keyboard(unsigned char key, int x, int y)
         glmVertexNormals(model, smoothing_angle);
         lists();
         break;
-        
+
     case '-':
         smoothing_angle -= 1.0;
         printf("Smoothing angle: %.1f\n", smoothing_angle);
         glmVertexNormals(model, smoothing_angle);
         lists();
         break;
-        
+
     case '+':
         smoothing_angle += 1.0;
         printf("Smoothing angle: %.1f\n", smoothing_angle);
         glmVertexNormals(model, smoothing_angle);
         lists();
         break;
-        
+
     case 'W':
         glmScale(model, 1.0/scale);
         glmWriteOBJ(model, "out.obj", GLM_SMOOTH | GLM_MATERIAL);
         break;
-        
+
     case 'R':
         {
             GLuint i;
@@ -542,12 +552,12 @@ keyboard(unsigned char key, int x, int y)
             lists();
             break;
         }
-        
+
     case 27:
         exit(0);
         break;
     }
-    
+
     glutPostRedisplay();
 }
 
@@ -558,7 +568,7 @@ menu(int item)
     DIR* dirp;
     char* name;
     struct dirent* direntp;
-    
+
     if (item > 0) {
         keyboard((unsigned char)item, 0, 0);
     } else {
@@ -579,15 +589,15 @@ menu(int item)
         scale = glmUnitize(model);
         glmFacetNormals(model);
         glmVertexNormals(model, smoothing_angle);
-        
+
         if (model->nummaterials > 0)
             material_mode = 2;
         else
             material_mode = 0;
-        
+
         lists();
         free(name);
-        
+
         glutPostRedisplay();
     }
 }
@@ -601,16 +611,16 @@ mouse(int button, int state, int x, int y)
     GLdouble model[4*4];
     GLdouble proj[4*4];
     GLint view[4];
-    
+
     /* fix for two-button mice -- left mouse + shift = middle mouse */
     if (button == GLUT_LEFT_BUTTON && glutGetModifiers() & GLUT_ACTIVE_SHIFT)
         button = GLUT_MIDDLE_BUTTON;
-    
+
     gltbMouse(button, state, x, y);
-    
+
     mouse_state = state;
     mouse_button = button;
-    
+
     if (state == GLUT_DOWN && button == GLUT_MIDDLE_BUTTON) {
         glGetDoublev(GL_MODELVIEW_MATRIX, model);
         glGetDoublev(GL_PROJECTION_MATRIX, proj);
@@ -623,7 +633,7 @@ mouse(int button, int state, int x, int y)
             &pan_x, &pan_y, &pan_z);
         pan_y = -pan_y;
     }
-    
+
     glutPostRedisplay();
 }
 
@@ -633,9 +643,9 @@ motion(int x, int y)
     GLdouble model[4*4];
     GLdouble proj[4*4];
     GLint view[4];
-    
+
     gltbMotion(x, y);
-    
+
     if (mouse_state == GLUT_DOWN && mouse_button == GLUT_MIDDLE_BUTTON) {
         glGetDoublev(GL_MODELVIEW_MATRIX, model);
         glGetDoublev(GL_PROJECTION_MATRIX, proj);
@@ -648,7 +658,7 @@ motion(int x, int y)
             &pan_x, &pan_y, &pan_z);
         pan_y = -pan_y;
     }
-    
+
     glutPostRedisplay();
 }
 
@@ -659,30 +669,30 @@ main(int argc, char** argv)
     struct dirent* direntp;
     DIR* dirp;
     int models;
-    
+
     glutInitWindowSize(windowW, windowH);
     glutInit(&argc, argv);
-    
+
     while (--argc) {
         if (strcmp(argv[argc], "-sb") == 0)
             buffering = GLUT_SINGLE;
         else
             model_file = argv[argc];
     }
-    
+
     if (!model_file) {
         model_file = "data/dolphins.obj";
     }
-    
+
     glutInitDisplayMode(GLUT_RGB | GLUT_DEPTH | buffering);
     glutCreateWindow("Smooth");
-    
+
     glutReshapeFunc(reshape);
     glutDisplayFunc(display);
     glutKeyboardFunc(keyboard);
     glutMouseFunc(mouse);
     glutMotionFunc(motion);
-    
+
     models = glutCreateMenu(menu);
     dirp = opendir(DATA_DIR);
     if (!dirp) {
@@ -696,7 +706,7 @@ main(int argc, char** argv)
         }
         closedir(dirp);
     }
-    
+
     glutCreateMenu(menu);
     glutAddMenuEntry("Smooth", 0);
     glutAddMenuEntry("", 0);
@@ -719,9 +729,9 @@ main(int argc, char** argv)
     glutAddMenuEntry("", 0);
     glutAddMenuEntry("[Esc] Quit", 27);
     glutAttachMenu(GLUT_RIGHT_BUTTON);
-    
+
     init();
-    
+
     glutMainLoop();
     return 0;
 }
