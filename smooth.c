@@ -5,8 +5,12 @@
     Model viewer program.  Exercises the glm library.
 */
 
+#define OPENGLEXTENSIONS_H
+
 #ifdef __APPLE__
 #include <GLUT/glut.h>
+#include <OpenGL/gl.h>
+#include <OpenGL/glu.h>
 #else
 #include <GL/glut.h>
 #endif
@@ -47,10 +51,10 @@ GLdouble   pan_z = 0.0;
 
 GLuint renderShaderID;
 GLuint shadowShaderID;
-GLuint shaderTexID;
+//GLuint shaderTexID;
 
-GLuint shadowBuffer;
-GLuint shadowTexture;
+//GLuint shadowBuffer;
+//GLuint shadowTexture;
 
 
 #if defined(_WIN32)
@@ -83,7 +87,7 @@ elapsed(void)
     return (float)difference/(float)CLK_TCK;
 }
 
-void initShadowMap();
+//void initShadowMap();
 
 void
 shadowtext(int x, int y, char* s) 
@@ -167,7 +171,7 @@ init(void)
     renderShaderID = loadShaders("shaders/vShader.c", "shaders/fShader.c");
     shadowShaderID = loadShaders("shaders/shadowVShader.c", "shaders/shadowFShader.c");
     
-    initShadowMap();
+    //initShadowMap();
     
     gltbInit(GLUT_LEFT_BUTTON);
     
@@ -191,7 +195,7 @@ init(void)
     
     //glEnable(GL_CULL_FACE);
 }
-
+/*
 void
 initShadowMap()
 {
@@ -214,14 +218,14 @@ initShadowMap()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     
     // Set "renderedTexture" as our colour attachement #0
-    glFramebufferTextureEXT(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, shadowTexture, 0);
+    //glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, shadowTexture, 0);
     
     // Set the list of draw buffers.
     GLenum DrawBuffers[1] = {GL_COLOR_ATTACHMENT0};
     glDrawBuffers(1, DrawBuffers); // "1" is the size of DrawBuffers
 
 
-}
+}*/
 
 void
 reshape(int width, int height)
@@ -263,10 +267,10 @@ drawTexToScreen(void) {
     
     glUseProgram(renderShaderID);
     
-    glActiveTexture(GL_TEXTURE0);
+    //glActiveTexture(GL_TEXTURE0);
     //glEnable(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D, shadowTexture);
-    glUniform1i(shaderTexID, 0);
+    //glBindTexture(GL_TEXTURE_2D, shadowTexture);
+    //glUniform1i(shaderTexID, 0);
     
     
     // Draw a textured quad

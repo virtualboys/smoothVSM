@@ -1,7 +1,7 @@
 
 varying vec2 uv;
 
-uniform sampler2D renderedTexture;
+//uniform sampler2D renderedTexture;
 
 void main(){
 	//gl_FragColor = texture2D( renderedTexture, uv ) ;
