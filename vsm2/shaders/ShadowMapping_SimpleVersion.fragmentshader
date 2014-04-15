@@ -1,0 +1,67 @@
+
+
+uniform vec4 lPos;
+uniform float kd;
+uniform float ka;
+
+
+// Interpolated values from the vertex shaders
+varying vec2 UV;
+varying vec4 ShadowCoord;
+
+
+varying vec3 norm;
+varying vec3 pos;
+
+// Values that stay constant for the whole mesh.
+uniform sampler2D shadowMap;
+
+vec4 ShadowCoordPostW;
+
+float chebyshevUpperBound( float distance)
+{
+	vec2 moments = texture2D(shadowMap,ShadowCoordPostW.xy).rg;
+	
+	// Surface is fully lit. as the current fragment is before the light occluder
+	if (distance <= moments.x)
+		return 1.0 ;
+    
+    return 0.0;
+
+	// The fragment is either in shadow or penumbra. We now use chebyshev's upperBound to check
+	// How likely this pixel is to be lit (p_max)
+	float variance = moments.y - (moments.x * moments.x);
+	variance = max(variance,0.00002);
+
+	float d = distance - moments.x;
+	float p_max = variance / (variance + d*d);
+
+	return p_max;
+}
+
+
+void main(){
+
+	// Light emission properties
+	//vec3 LightColor = vec3(1,1,1);
+	
+	// Material properties
+	//vec3 MaterialDiffuseColor = texture2D( myTextureSampler, UV ).rgb;
+
+	//float visibility = texture2D( shadowMap,ShadowCoord.xy/ShadowCoord.w).r;
+	//if((ShadowCoord.z)/ShadowCoord.w <= visibility)
+    //	visibility = 1.0;
+    //else
+	//	visibility = 0.0;
+    ShadowCoordPostW = ShadowCoord / ShadowCoord.w;
+	float visibility = chebyshevUpperBound(ShadowCoordPostW.z);
+
+    vec3 eye = normalize(pos - (lPos*gl_ModelViewMatrix).xyz);
+    float dif = max(float(0),dot(eye, norm));
+    float shading = (min(float(1),ka + kd * dif));
+
+	gl_FragColor.rgb = visibility * vec3(1,1,1); //* MaterialDiffuseColor * LightColor;
+    //visibility = ShadowCoord.z / ShadowCoord.w;
+    //visibility *= 2;
+	//gl_FragColor = vec4(visibility,visibility,visibility,1);
+}

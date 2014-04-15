@@ -1,0 +1,29 @@
+
+
+// Input vertex data, different for all executions of this shader.
+
+uniform mat4 world;
+// Output data ; will be interpolated for each fragment.
+//varying vec2 UV;
+varying vec4 ShadowCoord;
+
+varying vec3 norm;
+varying vec3 pos;
+
+// Values that stay constant for the whole mesh.
+
+
+
+void main(){
+
+	// Output position of the vertex, in clip space : MVP * position
+	gl_Position =  ftransform();
+	
+	ShadowCoord = gl_TextureMatrix[7]*world * gl_Vertex;
+    norm = gl_Normal.xyz;
+    pos = gl_Vertex.xyz;
+	
+	// UV of the vertex. No special space for this one.
+	//UV = vertexUV;
+}
+
